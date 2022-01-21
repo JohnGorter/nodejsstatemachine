@@ -10,7 +10,9 @@ class CancelRoastAction extends Action {}
 class IdleState extends State {
     constructor(){
         super(); 
-        this.register({[WarmUpAction.name]: () => new Transition(new Preheating())});
+        this.register({
+            [WarmUpAction.name]: () => new Transition(new Preheating())
+        });
     }
 }
 class Preheating extends State {

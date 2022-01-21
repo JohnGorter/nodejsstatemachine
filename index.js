@@ -1,45 +1,43 @@
-import { write } from 'fs';
 import * as readline from 'node:readline/promises'
 import { stdin as input, stdout as output, stdout } from 'process';
-import { Actions, States, Machines } from './dmr.js'
-// import { Actions, States, Machines } from './pin.js'
 
+import { Actions, States, Machines } from './dmr.js'
 const machine = new Machines.DMR();
+
 const rl = new readline.Interface({input, output});
 
-machine.on("transition", States.IdleState, States.Preheating, () => writeLog("preheating"));
-machine.on("action", Actions.WarmUpAction, () => writeLog("starting to warm the shit up"));
-machine.on("state.enter", States.Preheating, () => { 
-    machine.timer = new Timer().start("HEATING UP: ", 100); 
-    setTimeout(() => { machine.timer.stop(); machine.do(new Actions.PreheatReadyAction())}, 5000)
-});
-machine.on("state.enter", States.CoolingDown, () => { 
-    machine.timer = new Timer().start("COOLING DOWN: ", 100); 
-    setTimeout(() => {  machine.timer.stop(); machine.do(new Actions.CooledDownAction())}, 5000)
-});
-machine.on("state.enter", States.PreheatReady, () => writeLog("preheating is done!"));
-machine.on("state.enter", States.Roasting, () => machine.timer = new Timer().start("ROASTING: ", 100));
-machine.on("state.leave", States.Roasting, () => machine.timer.stop());
-machine.on("state.leave", States.CoolingDown, () => writeLog("Cooled down"));
+let session = {
+    setOffset(){
+        if (machine.state.is(States.Roasting)){
+            session.newRecipe = true;
+        }
+    }
+}
 
-// machine.on("state.enter", (s) => writeLog("state enter " + s));
-// const machine = new Machines.Pin();
-// console.log("1");
-// machine.on("state.enter", (s) => writeLog("state enter!!" + s));
-// console.log("2");
+machine.on("transition", States.IdleState, States.Preheating, () => {
+    session.newRecipe = false;
+    session.selectedRecipe = 1;
+});
+machine.on("state.leave", States.Roasting, () => {
+    if (session.newRecipe) {
+        session.selectedRecipe += 1;
+        session.newRecipe = false;
+    }
+   // machine.timer.stop()
+});
 
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 startCommands();
 showProgress();
-
-
-
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 async function startCommands() {
     let action = "q"
     do {
         action =  await rl.question('\x1B[6;1H\x1B[KCOMMAND:> ') 
-        if (action != "q")  machine.do(action)
+        if (action == "o") { writeLog("turning the buttons..."); session.setOffset(); } 
+        if (action != "o" && action != "q")  machine.do(action)
     } while (action != "q");
 }
 async function showProgress(){

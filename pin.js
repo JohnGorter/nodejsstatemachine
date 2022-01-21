@@ -84,8 +84,23 @@ class Pin extends Machine {
         this.state = new IdleState();
     }
     do(action){
-        if (typeof action == "string") action = eval(`new ${action}()`);
-        super.do(action);
+        try {
+            if (typeof action == "string"){ 
+                switch (action) {
+                    case "help": console.log("supported commands: ", ["help", "quit", ...this.help()].join(", ")); break;
+                    case "quit": process.exit(0); break;
+                    default: {
+                        action = eval(`new ${action}()`);
+                        super.do(action);
+                        break;
+                    }
+                }
+            } else {
+                super.do(action)
+            }
+        } catch (e) {
+            console.log("Unknown command:", action) 
+        }
     }
 }
 export let Machines = { Pin }

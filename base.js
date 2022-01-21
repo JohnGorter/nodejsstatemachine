@@ -21,12 +21,19 @@ class StateElement {}
 export class State extends StateElement {
     #dispatchers = {};
     register(dispatchers) {this.#dispatchers = Object.assign(this.#dispatchers, dispatchers)}
-    dispatchAction(action, machine) { machine?.emit("state.leave", this); return this.#dispatchers[action.constructor.name]?.().do(machine);}
+    dispatchAction(action, machine) { 
+        machine?.emit("state.leave", this); 
+        return this.#dispatchers[action.constructor.name]?.().do(machine);
+    }
+    is(state) { return this instanceof state;}
     getActions() { return Object.getOwnPropertyNames(this.#dispatchers);}
     toString() { return this.constructor.name }
 }
 export class Action extends StateElement  {
-    do(machine) { machine?.emit("action", this, machine.state); return machine.state.dispatchAction(this, machine); }
+    do(machine) { 
+        machine?.emit("action", this, machine.state); 
+        return machine.state.dispatchAction(this, machine); 
+    }
 }
 export class Transition extends StateElement  {
     #toState
